@@ -367,10 +367,10 @@ status "Install OBS Studio"
 systemd-nspawn_exec apt-get install -y ${OBS}
 
 # Install obs-websocket
-get_release obsproject/obs-websocket .deb
-cp $RELEASE_FILE $R/root
-systemd-nspawn_exec dpkg -i /root/$RELEASE_FILE
-systemd-nspawn_exec apt-get install -f
+#get_release obsproject/obs-websocket .deb
+#cp $RELEASE_FILE $R/root
+#systemd-nspawn_exec dpkg -i /root/$RELEASE_FILE
+#systemd-nspawn_exec apt-get install -f
 
 # Install obs-linuxbrowser
 get_release bazukas/obs-linuxbrowse .tgz
