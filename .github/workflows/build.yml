@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         DISTRO: ["debian"]
-        SUITE: ["bullseye", "bookworm"]
+        SUITE: ["buster", "bullseye", "bookworm"]
         ARCH: ["arm64"]
         VARIANT: ["full"]
     name: rpi-builder
