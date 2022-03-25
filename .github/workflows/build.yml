@@ -29,7 +29,7 @@ jobs:
               echo "VARIANT=${{ matrix.VARIANT }}" >> config.txt
               echo "COMPRESS=xz" >> config.txt
               echo "MANIFEST=true" >> config.txt
-              sudo ./rpi-obs.sh
+              sudo ./rpi-obs.sh --debug
               sha256sum ${{ matrix.DISTRO }}-${{ matrix.SUITE }}-${{ matrix.VARIANT }}-${{ matrix.ARCH }}.img.xz \
                 > ${{ matrix.DISTRO }}-${{ matrix.SUITE }}-${{ matrix.VARIANT }}-${{ matrix.ARCH }}.img.sha256
       - name: Publish Release
