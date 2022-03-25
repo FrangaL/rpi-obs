@@ -120,14 +120,12 @@ case ${ARCHITECTURE} in
     QEMUARCH="qemu-aarch64"
     QEMUBIN="/usr/bin/qemu-aarch64-static"
     LIB_ARCH="aarch64-linux-gnu"
-    CMAKE_ARM="-DARM64=ON"
-    ;;
+    CMAKE_ARM="-DARM64=ON" ;;
   armhf)
     QEMUARCH="qemu-arm"
     QEMUBIN="/usr/bin/qemu-arm-static"
     LIB_ARCH="arm-linux-gnueabihf"
-    CMAKE_ARM="-DARM64=OFF"
-    ;;
+    CMAKE_ARM="-DARM64=OFF" ;;
 esac
 
 # Detect modul binfmt_misc load into kernel.
@@ -157,7 +155,7 @@ COMPONENTS="main contrib non-free"
 MINPKGS="ifupdown openresolv net-tools init dbus rsyslog cron wget gnupg"
 EXCLUDE="info install-info tasksel"
 EXTRAPKGS="openssh-server parted locales dosfstools sudo libterm-readline-gnu-perl"
-FIRMWARES="firmware-misc-nonfree firmware-atheros firmware-realtek firmware-libertas firmware-brcm80211"
+FIRMWARES="firmware-misc-nonfree firmware-atheros firmware-realtek firmware-libertas firmware-brcm80211 raspi-firmware"
 WIRELESSPKGS="wpasupplicant wireless-tools rfkill wireless-regdb"
 BLUETOOTH="bluetooth bluez bluez-tools"
 DESKTOP="desktop-base lightdm xserver-xorg"
@@ -190,16 +188,9 @@ EOF
 status "debootstrap second stage"
 systemd-nspawn_exec /debootstrap/debootstrap --second-stage
 
-# Define sources.list
-case ${OS}+${RELEASE}+${ARCHITECTURE} in
-  debian*buster*)
-  echo "APT::Default-Release \"$RELEASE\";" >"$R"/etc/apt/apt.conf
-  echo "deb $MIRROR $RELEASE-backports $COMPONENTS" >>"$R"/etc/apt/sources.list
-  echo "deb $MIRROR-security/ $RELEASE/updates $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-  debian*bullseye*|debian*bookworm*)
-  echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
-  echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-esac
+# Add security updates on sources.list.
+echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
+echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list
 
 # Enable apt proxy http on compilation.
 [ -n "$PROXY_URL" ] && echo "Acquire::http { Proxy \"$PROXY_URL\" };" >"$R"/etc/apt/apt.conf.d/66proxy
@@ -269,25 +260,12 @@ fi
 # Add extra packagesa on compilation.
 [ -n "$ADDPKG" ] && INCLUDEPKGS="${ADDPKG} ${INCLUDEPKGS}"
 
-# Use buster-backports on Debian.
-if [[ "${OS}-${RELEASE}" == "debian-buster" ]]; then
-  FIRMWARES="${FIRMWARES}/buster-backports"
-  KERNEL_IMAGE="${KERNEL_IMAGE}/buster-backports"
-  FIRMWARES+=" raspi-firmware/buster-backports"
-  KERNEL_IMAGE="$KERNEL_IMAGE raspi-firmware"
-elif [[ "${OS}-${RELEASE}" == "debian-bullseye" ]]; then
-  KERNEL_IMAGE="$KERNEL_IMAGE raspi-firmware"
-elif [[ "${OS}-${RELEASE}" == "debian-bookworm" ]]; then
-  KERNEL_IMAGE="$KERNEL_IMAGE raspi-firmware"
-fi
-
 systemd-nspawn_exec apt-get update
 systemd-nspawn_exec apt-get install -y ${FIRMWARES}
 
+# Install kernel
 # Disable suspend/resume - speeds up boot massively
 echo "RESUME=none" | tee "${R}/etc/initramfs-tools/conf.d/resume"
-
-# Installl kernel
 # Select kernel and bootloader.
 case ${OS}+${ARCHITECTURE} in
   debian*arm64) KERNEL_IMAGE="linux-image-arm64" ;;
@@ -335,7 +313,6 @@ EOM
 
 # Add hostname.
 echo "$HOST_NAME" >"$R"/etc/hostname
-
 # Disable password sudo.
 echo "pi ALL=(ALL) NOPASSWD:ALL" >>"$R"/etc/sudoers
 
