@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        DISTRO: ["raspios"]
+        DISTRO: ["debian"]
         SUITE: ["bullseye", "bookworm"]
         ARCH: ["arm64"]
         VARIANT: ["full"]
