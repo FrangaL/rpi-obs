@@ -41,7 +41,7 @@ RASP_KEY="9165938D90FDDD2E"
 [ -f ./config.txt ] && source ./config.txt
 
 # Work enviroment.
-IMGNAME="${OS}-${RELEASE}-${VARIANT}-${ARCHITECTURE}.img"
+IMGNAME="${OS}-${RELEASE}-obs-${ARCHITECTURE}.img"
 CURRENT_DIR="$(pwd)"
 BASEDIR="${CURRENT_DIR}/${OS}_${RELEASE}_${VARIANT}_${ARCHITECTURE}"
 R="${BASEDIR}/build"
@@ -239,7 +239,10 @@ case ${OS}+${RELEASE}+${ARCHITECTURE} in
   debian*bullseye*)
   echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
   echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-  raspios*arm64)
+  debian*bookworm*)
+  echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
+  echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
+    raspios*arm64)
   echo "deb ${MIRROR_PIOS/raspbian/debian} $RELEASE main" >"$R"/etc/apt/sources.list.d/raspi.list ;;
   raspios*armhf)
   MIRROR=${PIOS_MIRROR/raspbian./archive.}
