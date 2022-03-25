@@ -242,7 +242,7 @@ case ${OS}+${RELEASE}+${ARCHITECTURE} in
   debian*bookworm*)
   echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
   echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-    raspios*arm64)
+  raspios*arm64)
   echo "deb ${MIRROR_PIOS/raspbian/debian} $RELEASE main" >"$R"/etc/apt/sources.list.d/raspi.list ;;
   raspios*armhf)
   MIRROR=${PIOS_MIRROR/raspbian./archive.}
@@ -333,6 +333,8 @@ if [[ "${OS}-${RELEASE}" == "debian-buster" ]]; then
   RASPI_FIRMWARE="${RASPI_FIRMWARE}/buster-backports"
   KERNEL_IMAGE="$KERNEL_IMAGE $RASPI_FIRMWARE"
 elif [[ "${OS}-${RELEASE}" == "debian-bullseye" ]]; then
+  KERNEL_IMAGE="$KERNEL_IMAGE $RASPI_FIRMWARE"
+elif [[ "${OS}-${RELEASE}" == "debian-bookworm" ]]; then
   KERNEL_IMAGE="$KERNEL_IMAGE $RASPI_FIRMWARE"
 fi
 
