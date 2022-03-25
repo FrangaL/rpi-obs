@@ -343,7 +343,7 @@ systemd-nspawn_exec apt-get install -y ${FIRMWARES}
 echo "RESUME=none" | tee "${R}/etc/initramfs-tools/conf.d/resume"
 
 # Installl kernel
-systemd-nspawn_exec apt-get install -y ${KERNEL_IMAGE}
+systemd-nspawn_exec sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y ${KERNEL_IMAGE}"
 # Configuration firmware
 if [ "$OS" = raspios ]; then
   echo "net.ifnames=0 dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootwait" >"${R}/${BOOT}"/cmdline.txt
