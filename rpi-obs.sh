@@ -116,7 +116,7 @@ status "Updating apt repository..."
 apt-get update || apt-get update
 status "Installing necessary dependencies..."
 DEPS="binfmt-support dosfstools qemu-user-static rsync wget lsof git parted dirmngr e2fsprogs \
-systemd-container debootstrap xz-utils kmod udev dbus gnupg gnupg-utils debian-archive-keyring"
+systemd-container debootstrap xz-utils kmod udev dbus gnupg gnupg-utils debian-archive-keyring jq"
 installdeps
 
 # Check minimum version of bootstrap
@@ -366,16 +366,11 @@ systemd-nspawn_exec apt-get -y dist-upgrade
 status "Install OBS Studio"
 systemd-nspawn_exec apt-get install -y ${OBS}
 
-# Install obs-websocket
-#get_release obsproject/obs-websocket .deb
-#cp $RELEASE_FILE $R/root
-#systemd-nspawn_exec dpkg -i /root/$RELEASE_FILE
-#systemd-nspawn_exec apt-get install -f
-
 # Install obs-linuxbrowser
 get_release bazukas/obs-linuxbrowse .tgz
 mkdir -p $R/$USER_PI/.config/obs-studio/plugins
 tar -zxvf $RELEASE_FILE -C $R/$USER_PI/.config/obs-studio/plugins/
+rm -f $RELEASE_FILE
 
 status "Enable service generate keys SSH"
 systemd-nspawn_exec systemctl enable generate-ssh-host-keys.service
