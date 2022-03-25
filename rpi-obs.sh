@@ -360,7 +360,7 @@ fi
 echo "hdmi_force_hotplug=1" >>"$R"/"${BOOT}"/config.txt
 
 status "Install packages base"
-systemd-nspawn_exec apt-get install -y $INCLUDEPKGS
+systemd-nspawn_exec sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y $INCLUDEPKGS"
 systemd-nspawn_exec apt-get -y dist-upgrade
 
 status "Install OBS Studio"
@@ -370,6 +370,7 @@ systemd-nspawn_exec apt-get install -y ${OBS}
 get_release obsproject/obs-websocket .deb
 cp $RELEASE_FILE $R/root
 systemd-nspawn_exec dpkg -i /root/$RELEASE_FILE
+systemd-nspawn_exec apt-get install -f
 
 # Install obs-linuxbrowser
 get_release bazukas/obs-linuxbrowse .tgz
