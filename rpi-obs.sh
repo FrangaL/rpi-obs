@@ -29,14 +29,6 @@ SWAP=${SWAP:-"on"}
 
 # Download mirrors.
 DEB_MIRROR="http://deb.debian.org/debian"
-PIOS_MIRROR="http://raspbian.raspberrypi.org/raspbian/"
-RASP_MIRROR="http://archive.raspbian.org/raspbian/"
-# Key server
-KEY_SRV=${KEY_SRV:-"keyserver.ubuntu.com"}
-# raspberrypi-archive-keyring
-PIOS_KEY="82B129927FA3303E"
-# raspbian-archive-keyring
-RASP_KEY="9165938D90FDDD2E"
 
 # Load custom config.
 [ -f ./config.txt ] && source ./config.txt
@@ -178,30 +170,6 @@ if [[ "${OS}" == "debian" ]]; then
     debian*arm64) KERNEL_IMAGE="linux-image-arm64" ;;
     debian*armhf) KERNEL_IMAGE="linux-image-armmp" ;;
   esac
-elif [[ "${OS}" == "raspios" ]]; then
-  BOOT="/boot"
-  KERNEL_IMAGE="raspberrypi-kernel raspberrypi-bootloader"
-  case ${OS}+${ARCHITECTURE} in
-    raspios*arm64)
-      MIRROR=$PIOS_MIRROR
-      MIRROR_PIOS=${MIRROR/raspbian./archive.}
-      KEYRING=/usr/share/keyrings/debian-archive-keyring.gpg
-      GPG_KEY=$PIOS_KEY
-      BOOTSTRAP_URL=$DEB_MIRROR ;;
-    raspios*armhf)
-      MIRROR=$RASP_MIRROR
-      KEYRING=/usr/share/keyrings/raspbian-archive-keyring.gpg
-      GPG_KEY=$RASP_KEY
-      BOOTSTRAP_URL=$RASP_MIRROR ;;
-  esac
-fi
-
-# Install certificates.
-if [ ! -f $KEYRING ]; then
-  GNUPGHOME="$(mktemp -d)"
-  export GNUPGHOME
-  gpg --keyring=$KEYRING --no-default-keyring --keyserver-options timeout=10 --keyserver "$KEY_SRV" --receive-keys $GPG_KEY
-  rm -rf "${GNUPGHOME}"
 fi
 
 # Enable proxy http first stage
@@ -240,21 +208,7 @@ case ${OS}+${RELEASE}+${ARCHITECTURE} in
   debian*bullseye*|debian*bookworm*)
   echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
   echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-  raspios*arm64)
-  echo "deb ${MIRROR_PIOS/raspbian/debian} $RELEASE main" >"$R"/etc/apt/sources.list.d/raspi.list ;;
-  raspios*armhf)
-  MIRROR=${PIOS_MIRROR/raspbian./archive.}
-  echo "deb ${MIRROR/raspbian/debian} $RELEASE main" >"$R"/etc/apt/sources.list.d/raspi.list ;;
 esac
-
-# Install archive-keyring on PiOS
-if [ "$OS" = "raspios" ]; then
-  [ "$RELEASE" = "bullseye" ] && RASP_KEY="82B129927FA3303E"
-  systemd-nspawn_exec <<EOF
-  apt-key adv --keyserver-options timeout=10 --keyserver $KEY_SRV --recv-keys $PIOS_KEY
-  apt-key adv --keyserver-options timeout=10 --keyserver $KEY_SRV --recv-keys $RASP_KEY
-EOF
-fi
 
 # Enable apt proxy http on compilation.
 [ -n "$PROXY_URL" ] && echo "Acquire::http { Proxy \"$PROXY_URL\" };" >"$R"/etc/apt/apt.conf.d/66proxy
@@ -345,9 +299,7 @@ echo "RESUME=none" | tee "${R}/etc/initramfs-tools/conf.d/resume"
 # Installl kernel
 systemd-nspawn_exec sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y ${KERNEL_IMAGE}"
 # Configuration firmware
-if [ "$OS" = raspios ]; then
-  echo "net.ifnames=0 dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootwait" >"${R}/${BOOT}"/cmdline.txt
-elif [ "$OS" = debian ]; then
+if [ "$OS" = debian ]; then
   echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 rw  rootwait" >"${R}/${BOOT}"/cmdline.txt
 elif [ "$ARCHITECTURE" = "arm64" ]; then
   echo "arm_64bit=1" >>"$R"/"${BOOT}"/config.txt
@@ -504,8 +456,6 @@ SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
     chown -R root:gpio /sys$devpath && chmod -R 770 /sys$devpath\
 '"
 EOF
-elif [[ "$OS" == "raspios" && "$VARIANT" == "full" ]]; then
-  systemd-nspawn_exec apt-get install -y libraspberrypi-bin raspi-config
 fi
 
 # Clean system.
