@@ -25,6 +25,7 @@ FSTYPE=${FSTYPE:-"ext4"}
 BOOT_MB=${BOOT_MB:-"136"}
 FREE_SPACE=${FREE_SPACE:-"256"}
 MACHINE=$(dbus-uuidgen)
+SWAP=${SWAP:-"on"}
 
 # Download mirrors.
 DEB_MIRROR="http://deb.debian.org/debian"
@@ -369,15 +370,9 @@ rm -f linuxbrowser0.6.1-obs23.0.2-64bit.tgz
 status "Enable service generate keys SSH"
 systemd-nspawn_exec systemctl enable generate-ssh-host-keys.service
 
-# Add hostname.
-echo "$HOST_NAME" >"$R"/etc/hostname
-
 status "Define time zone"
 systemd-nspawn_exec ln -nfs /usr/share/zoneinfo/"$TIMEZONE" /etc/localtime
 systemd-nspawn_exec dpkg-reconfigure -fnoninteractive tzdata
-
-# Disable password sudo.
-echo "pi ALL=(ALL) NOPASSWD:ALL" >>"$R"/etc/sudoers
 
 status "Configure locales"
 sed -i "s/^# *\($LOCALES\)/\1/" "$R"/etc/locale.gen
@@ -390,11 +385,19 @@ if [ -z "$LANG" ]; then
 fi
 EOM
 
+# Add hostname.
+echo "$HOST_NAME" >"$R"/etc/hostname
+
+# Disable password sudo.
+echo "pi ALL=(ALL) NOPASSWD:ALL" >>"$R"/etc/sudoers
+
 # Enable SWAP.
-echo 'vm.swappiness=25' >>"$R"/etc/sysctl.conf
-echo 'vm.vfs_cache_pressure=50' >>"$R"/etc/sysctl.conf
-systemd-nspawn_exec apt-get install -y dphys-swapfile >/dev/null 2>&1
-sed -i "s/#CONF_SWAPSIZE=/CONF_SWAPSIZE=256/g" "$R"/etc/dphys-swapfile
+if [ "$SWAP" = "on" ]; then
+  echo 'vm.swappiness=25' >>"$R"/etc/sysctl.conf
+  echo 'vm.vfs_cache_pressure=50' >>"$R"/etc/sysctl.conf
+  systemd-nspawn_exec apt-get install -y dphys-swapfile >/dev/null 2>&1
+  sed -i "s/#CONF_SWAPSIZE=/CONF_SWAPSIZE=256/g" "$R"/etc/dphys-swapfile
+fi
 
 # Install f2fs-tools and modify cmdline.txt
 if [ "$FSTYPE" = "f2fs" ]; then
