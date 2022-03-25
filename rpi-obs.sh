@@ -95,14 +95,6 @@ total_time() {
   printf '%d seconds\n' $S
 }
 
-# Download releases to github.
-get_release() {
-  URL_DOWN="$(curl -sL https://api.github.com/repos/${1}/releases/latest | \
-  jq -r ".assets[].browser_download_url" | grep ${2})"
-  RELEASE_FILE=${URL_DOWN##*/}
-  wget -q $URL_DOWN
-}
-
 # Install dependencies.
 installdeps() {
   local PKGS=""
@@ -367,10 +359,10 @@ status "Install OBS Studio"
 systemd-nspawn_exec apt-get install -y ${OBS}
 
 # Install obs-linuxbrowser
-get_release bazukas/obs-linuxbrowse .tgz
+wget -q https://github.com/bazukas/obs-linuxbrowser/releases/download/0.6.1/linuxbrowser0.6.1-obs23.0.2-64bit.tgz
 mkdir -p $R/$USER_PI/.config/obs-studio/plugins
-tar -zxvf $RELEASE_FILE -C $R/$USER_PI/.config/obs-studio/plugins/
-rm -f $RELEASE_FILE
+tar -zxvf linuxbrowser0.6.1-obs23.0.2-64bit.tgz -C $R/$USER_PI/.config/obs-studio/plugins/
+rm -f linuxbrowser0.6.1-obs23.0.2-64bit.tgz
 
 status "Enable service generate keys SSH"
 systemd-nspawn_exec systemctl enable generate-ssh-host-keys.service
