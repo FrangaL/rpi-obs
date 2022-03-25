@@ -399,17 +399,8 @@ if [ "$SWAP" = "on" ]; then
   sed -i "s/#CONF_SWAPSIZE=/CONF_SWAPSIZE=256/g" "$R"/etc/dphys-swapfile
 fi
 
-# Install f2fs-tools and modify cmdline.txt
-if [ "$FSTYPE" = "f2fs" ]; then
-  DEPS="f2fs-tools" installdeps
-  systemd-nspawn_exec apt-get install -y f2fs-tools
-  sed -i 's/resize2fs/resize.f2fs/g' "$R"/usr/sbin/rpi-resizerootfs
-  FSOPTS="rw,acl,active_logs=6,background_gc=on,user_xattr"
-elif [ "$FSTYPE" = "ext4" ]; then
-  FSOPTS="defaults,noatime"
-fi
-
 # Definine mount point.
+FSOPTS="defaults,noatime"
 cat >"$R"/etc/fstab <<EOM
 proc            /proc           proc    defaults          0       0
 /dev/mmcblk0p2  /               $FSTYPE    $FSOPTS  0       1
@@ -569,12 +560,8 @@ ROOT_LOOP="${LOOPDEVICE}p2"
 
 status "Format partitions."
 mkfs.vfat -n BOOT -F 32 -v "$BOOT_LOOP"
-if [[ $FSTYPE == f2fs ]]; then
-  mkfs.f2fs -f -l ROOTFS "$ROOT_LOOP"
-elif [[ $FSTYPE == ext4 ]]; then
-  FEATURES="-O ^64bit,^metadata_csum -E stride=2,stripe-width=1024 -b 4096"
-  mkfs $FEATURES -t "$FSTYPE" -L ROOTFS "$ROOT_LOOP"
-fi
+FEATURES="-O ^64bit,^metadata_csum -E stride=2,stripe-width=1024 -b 4096"
+mkfs $FEATURES -t "$FSTYPE" -L ROOTFS "$ROOT_LOOP"
 
 status "Create the directories for the partitions and mount them."
 MOUNTDIR="$BUILDDIR/mount"
@@ -596,11 +583,7 @@ status "Check partitions"
 log "Check filesystem boot partition type vfat" white
 dosfsck -w -r -a -t "$BOOT_LOOP"
 log "Check filesystem root partition type $FSTYPE" white
-if [[ "$FSTYPE" == "f2fs" ]]; then
-  fsck.f2fs -y -f "$ROOT_LOOP"
-elif [[ "$FSTYPE" == "ext4" ]]; then
-  e2fsck -y -f "$ROOT_LOOP"
-fi
+e2fsck -y -f "$ROOT_LOOP"
 
 status "Delete devices loop"
 blockdev -v --flushbufs "${LOOPDEVICE}"
