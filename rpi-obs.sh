@@ -360,7 +360,7 @@ systemd-nspawn_exec apt-get -y dist-upgrade
 status "Install OBS Studio"
 systemd-nspawn_exec apt-get install -y ${OBS}
 
-# Install obs-linuxbrowser
+status "Install obs-linuxbrowser"
 wget -q https://github.com/bazukas/obs-linuxbrowser/releases/download/0.6.1/linuxbrowser0.6.1-obs23.0.2-64bit.tgz
 mkdir -p $R/$USER_PI/.config/obs-studio/plugins
 tar -zxvf linuxbrowser0.6.1-obs23.0.2-64bit.tgz -C $R/$USER_PI/.config/obs-studio/plugins/
