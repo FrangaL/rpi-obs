@@ -26,6 +26,7 @@ BOOT_MB=${BOOT_MB:-"136"}
 FREE_SPACE=${FREE_SPACE:-"256"}
 MACHINE=$(dbus-uuidgen)
 SWAP=${SWAP:-"on"}
+CLEAN=${CLEAN:-"no"}
 
 # Download mirrors.
 DEB_MIRROR="http://deb.debian.org/debian"
