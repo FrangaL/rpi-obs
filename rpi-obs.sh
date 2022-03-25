@@ -230,16 +230,13 @@ EOF
 status "debootstrap second stage"
 systemd-nspawn_exec /debootstrap/debootstrap --second-stage
 
-# Definir sources.list
+# Define sources.list
 case ${OS}+${RELEASE}+${ARCHITECTURE} in
   debian*buster*)
   echo "APT::Default-Release \"$RELEASE\";" >"$R"/etc/apt/apt.conf
   echo "deb $MIRROR $RELEASE-backports $COMPONENTS" >>"$R"/etc/apt/sources.list
   echo "deb $MIRROR-security/ $RELEASE/updates $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-  debian*bullseye*)
-  echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
-  echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
-  debian*bookworm*)
+  debian*bullseye*|debian*bookworm*)
   echo "deb $MIRROR $RELEASE-updates $COMPONENTS" >>"$R"/etc/apt/sources.list
   echo "deb ${MIRROR/deb./security.}-security/ ${RELEASE}-security $COMPONENTS" >>"$R"/etc/apt/sources.list ;;
   raspios*arm64)
