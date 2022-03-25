@@ -27,9 +27,11 @@ FREE_SPACE=${FREE_SPACE:-"256"}
 MACHINE=$(dbus-uuidgen)
 SWAP=${SWAP:-"on"}
 CLEAN=${CLEAN:-"no"}
-
-# Download mirrors.
 DEB_MIRROR="http://deb.debian.org/debian"
+BOOT="/boot/firmware"
+MIRROR=$DEB_MIRROR
+BOOTSTRAP_URL=$MIRROR
+KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
 
 # Load custom config.
 [ -f ./config.txt ] && source ./config.txt
@@ -143,6 +145,7 @@ elif [[ $NSPAWN_VER -ge 241 ]]; then
 else
   EXTRA_ARGS="-q"
 fi
+
 # Enviroment systemd-nspawn.
 systemd-nspawn_exec() {
   ENV="RUNLEVEL=1,LANG=C,DEBIAN_FRONTEND=noninteractive,DEBCONF_NOWARNINGS=yes"
@@ -159,19 +162,6 @@ WIRELESSPKGS="wpasupplicant wireless-tools rfkill wireless-regdb"
 BLUETOOTH="bluetooth bluez bluez-tools"
 DESKTOP="desktop-base lightdm xserver-xorg"
 OBS="obs-studio obs-plugins ffmpeg"
-
-if [[ "${OS}" == "debian" ]]; then
-  BOOT="/boot/firmware"
-  MIRROR=$DEB_MIRROR
-  BOOTSTRAP_URL=$MIRROR
-  KEYRING=/usr/share/keyrings/debian-archive-keyring.gpg
-  RASPI_FIRMWARE="raspi-firmware"
-  # Select kernel and bootloader.
-  case ${OS}+${ARCHITECTURE} in
-    debian*arm64) KERNEL_IMAGE="linux-image-arm64" ;;
-    debian*armhf) KERNEL_IMAGE="linux-image-armmp" ;;
-  esac
-fi
 
 # Enable proxy http first stage
 APT_CACHER=$(lsof -i :3142 | cut -d ' ' -f3 | uniq | sed '/^\s*$/d')
@@ -283,12 +273,12 @@ fi
 if [[ "${OS}-${RELEASE}" == "debian-buster" ]]; then
   FIRMWARES="${FIRMWARES}/buster-backports"
   KERNEL_IMAGE="${KERNEL_IMAGE}/buster-backports"
-  RASPI_FIRMWARE="${RASPI_FIRMWARE}/buster-backports"
-  KERNEL_IMAGE="$KERNEL_IMAGE $RASPI_FIRMWARE"
+  FIRMWARES+=" raspi-firmware/buster-backports"
+  KERNEL_IMAGE="$KERNEL_IMAGE raspi-firmware"
 elif [[ "${OS}-${RELEASE}" == "debian-bullseye" ]]; then
-  KERNEL_IMAGE="$KERNEL_IMAGE $RASPI_FIRMWARE"
+  KERNEL_IMAGE="$KERNEL_IMAGE raspi-firmware"
 elif [[ "${OS}-${RELEASE}" == "debian-bookworm" ]]; then
-  KERNEL_IMAGE="$KERNEL_IMAGE $RASPI_FIRMWARE"
+  KERNEL_IMAGE="$KERNEL_IMAGE raspi-firmware"
 fi
 
 systemd-nspawn_exec apt-get update
@@ -298,6 +288,11 @@ systemd-nspawn_exec apt-get install -y ${FIRMWARES}
 echo "RESUME=none" | tee "${R}/etc/initramfs-tools/conf.d/resume"
 
 # Installl kernel
+# Select kernel and bootloader.
+case ${OS}+${ARCHITECTURE} in
+  debian*arm64) KERNEL_IMAGE="linux-image-arm64" ;;
+  debian*armhf) KERNEL_IMAGE="linux-image-armmp" ;;
+esac
 systemd-nspawn_exec sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y ${KERNEL_IMAGE}"
 # Configuration firmware
 if [ "$OS" = debian ]; then
